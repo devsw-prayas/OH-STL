@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.20)
 project(Oh-STL)
 
@@ -16,4 +17,5 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 add_executable(Oh-STL  ${STL_SOURCE} ${STL_HEADERS})
 
 target_include_directories(Oh-STL PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Public)
+target_compile_options(Oh-STL PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX2>)
 
