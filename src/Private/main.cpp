@@ -7,7 +7,7 @@
 #include "stl_arrays.h"
 
 int main() {
-	constexpr size_t Size = 64ull * 1024 * 1024; // 64 MiB
+	constexpr size_t Size = 1703936ull;// 64 MiB
 	constexpr int Iterations = 1000;
 	constexpr int WarmupIterations = 100;
 

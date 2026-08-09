@@ -64,7 +64,11 @@ namespace Micro::STL::Arrays {
 	void memrevcpyu(void* __restrict src, void* __restrict dst, Bytes len) noexcept;
 
 	bool memcmpu(void* __restrict src, void* __restrict dst, Bytes len) noexcept;
-	void memset(void* src, std::byte val) noexcept;
+	void memsetu(void* src, std::byte val) noexcept;
+
+	// Streaming / non temporal versions
+	void memcpyStream(void* __restrict src, void* __restrict dst, Bytes len) noexcept;
+	void memcpyuStream(void* __restrict src, void* __restrict dst, Bytes len) noexcept;
 	
 
 	// User Facing calls

@@ -55,9 +55,13 @@ namespace Micro::STL::Arrays {
 		size_t tail = len & 127;
 		if((reinterpret_cast<uintptr_t>(src) & 31) == 0 
 		&& (reinterpret_cast<uintptr_t>(dst) & 31) == 0 )
+			if (len > (64ull * 1024)) memcpyStream(src, dst, len);
+			else 
 			// Fully aligned, let 'em rip
 			memcpy(src, dst, len - tail);
 		else {
+			if (len > (64ull * 1024)) memcpyuStream(src, dst, len);
+			else
 			// No alignment guarantees
 			memcpyu(src, dst, len- tail);
 		}
@@ -67,6 +71,53 @@ namespace Micro::STL::Arrays {
 		auto* d = static_cast<std::byte*>(dst) + (len - tail);
 
 		for(size_t i = 0; i < tail; i++) d[i] = s[i];
+	}
+
+	void memcpyStream(void* src, void* dst, Bytes len) noexcept {
+		// Guarantees that this will always be called with 32B aligned memory
+		__assume((reinterpret_cast<uintptr_t>(src) & 31) == 0);
+		__assume((reinterpret_cast<uintptr_t>(dst) & 31) == 0);
+
+		auto srcB = static_cast<std::byte*>(src);
+		auto dstB = static_cast<std::byte*>(dst);
+		__m256i a, b, c, d;
+		for (size_t i = 0; i < len; i += 128) {
+			a = _mm256_load_si256(reinterpret_cast<__m256i const*>(srcB));
+			b = _mm256_load_si256(reinterpret_cast<__m256i const*>(srcB + 32));
+			c = _mm256_load_si256(reinterpret_cast<__m256i const*>(srcB + 64));
+			d = _mm256_load_si256(reinterpret_cast<__m256i const*>(srcB + 96));
+
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB), a);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 32), b);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 64), c);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 96), d);
+
+			srcB += 128;
+			dstB += 128;
+		}
+		_mm_sfence();
+	}
+
+	void memcpyuStream(void* __restrict src, void* __restrict dst, Bytes len) noexcept {
+		// Use AVX2, unroll at 128 bytes per cycle
+		auto srcB = static_cast<std::byte*>(src);
+		auto dstB = static_cast<std::byte*>(dst);
+		__m256i a, b, c, d;
+		for (size_t i = 0; i < len; i += 128) {
+			a = _mm256_loadu_si256(reinterpret_cast<__m256i const*>(srcB));
+			b = _mm256_loadu_si256(reinterpret_cast<__m256i const*>(srcB + 32));
+			c = _mm256_loadu_si256(reinterpret_cast<__m256i const*>(srcB + 64));
+			d = _mm256_loadu_si256(reinterpret_cast<__m256i const*>(srcB + 96));
+
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB), a);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 32), b);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 64), c);
+			_mm256_stream_si256(reinterpret_cast<__m256i*>(dstB + 96), d);
+
+			srcB += 128;
+			dstB += 128;
+		}
+		_mm_sfence();
 	}
 
 	void memrevcpy(void* __restrict src, void* __restrict dst, Bytes len) noexcept{
