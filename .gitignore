@@ -102,3 +102,6 @@ Makefile
 # Claude
 .claude/
 .production/
+
+# Local planning notes
+/ArraysChecklist.md
